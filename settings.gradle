@@ -1,0 +1,9 @@
+include "aws",
+        "aws:api-handler",
+        "aws:eventbridge-handler",
+        "aws:sns-handler",
+        "aws:worker",
+        "deployment",
+        "scripts",
+        "scripts:publish",
+        "scripts:test-transcription"

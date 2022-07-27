@@ -1,0 +1,24 @@
+{
+    "name": "service-api-handler",
+    "version": "0.0.0",
+    "private": true,
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@mcma/api": "0.14.5",
+        "@mcma/aws-api-gateway": "0.14.5",
+        "@mcma/aws-client": "0.14.5",
+        "@mcma/aws-dynamodb": "0.14.5",
+        "@mcma/aws-lambda-worker-invoker": "0.14.5",
+        "@mcma/aws-logger": "0.14.5",
+        "@mcma/client": "0.14.5",
+        "@mcma/core": "0.14.5",
+        "@mcma/data": "0.14.5",
+        "@mcma/worker-invoker": "0.14.5",
+        "aws-sdk": "^2.1000.0",
+        "aws-xray-sdk-core": "^3.3.6"
+    },
+    "devDependencies": {
+        "@types/aws-lambda": "^8.10.93",
+        "@types/node": "^14.18.12"
+    }
+}

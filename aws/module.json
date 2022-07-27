@@ -1,0 +1,8 @@
+{
+    "namespace": "@MODULE_NAMESPACE@",
+    "name": "@MODULE_NAME@",
+    "provider": "aws",
+    "version": "@MODULE_VERSION@",
+    "displayName": "Google AI Service",
+    "description": "MCMA Service that exposes Google AI Services"
+}
