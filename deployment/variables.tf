@@ -15,7 +15,7 @@ variable "aws_profile" {}
 variable "aws_region" {}
 
 #########################
-# Translation
+# Google Configuration
 #########################
 
-variable "translation_credentials_file" {}
+variable "google_credentials_file" {}

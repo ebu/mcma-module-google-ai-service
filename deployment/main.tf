@@ -82,7 +82,7 @@ module "google_ai_service" {
     "${module.job_processor.aws_apigatewayv2_stage.service_api.execution_arn}/*/*",
   ]
 
-  translation_credentials_file = var.translation_credentials_file
+  google_credentials_file = var.google_credentials_file
 
   google_bucket_name = "ai-service-temp"
   google_bucket_location = "eu"

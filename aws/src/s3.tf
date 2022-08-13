@@ -199,8 +199,8 @@ resource "aws_s3_bucket_public_access_block" "output" {
 resource "aws_s3_object" "config_file" {
   bucket       = var.config_bucket != null ? var.config_bucket.id : aws_s3_bucket.config[0].id
   key          = "azure.json"
-  source       = var.translation_credentials_file
-  source_hash  = filemd5(var.translation_credentials_file)
+  source       = var.google_credentials_file
+  source_hash  = filemd5(var.google_credentials_file)
   content_type = "application/json"
 
   tags = var.tags
