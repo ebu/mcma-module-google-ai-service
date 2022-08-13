@@ -1,4 +1,7 @@
-const { OutputBucketPrefix } = process.env;
+import { S3Locator } from "@mcma/aws-s3";
+import { S3 } from "aws-sdk";
+
+const { OutputBucket, OutputBucketPrefix } = process.env;
 
 export function generateFilePrefix(url: string) {
     let filename = decodeURIComponent(new URL(url).pathname);
@@ -25,4 +28,22 @@ export function getFileExtension(url: string, withDot: boolean = true) {
         return filename.substring(pos + (withDot ? 0 : 1));
     }
     return "";
+}
+
+export async function writeOutputFile(filename: string, contents: any, s3: S3): Promise<S3Locator> {
+    const outputFile = new S3Locator({
+        url: s3.getSignedUrl("getObject", {
+            Bucket: OutputBucket,
+            Key: filename,
+            Expires: 12 * 3600
+        })
+    });
+
+    await s3.putObject({
+        Bucket: outputFile.bucket,
+        Key: outputFile.key,
+        Body: JSON.stringify(contents)
+    }).promise();
+
+    return outputFile;
 }

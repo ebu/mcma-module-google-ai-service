@@ -5,10 +5,10 @@ import { Storage, File } from "@google-cloud/storage";
 import { v4 as uuidv4 } from "uuid";
 import { default as axios } from "axios";
 
-import * as speech from "@google-cloud/speech"
+import * as speech from "@google-cloud/speech";
 
 import { WorkerContext } from "../index";
-import { generateFilePrefix, getFileExtension } from "./utils";
+import { generateFilePrefix, getFileExtension, writeOutputFile } from "./utils";
 import { S3Locator } from "@mcma/aws-s3";
 import { google } from "@google-cloud/speech/build/protos/protos";
 import RecognitionConfig = google.cloud.speech.v1.RecognitionConfig;
@@ -35,7 +35,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
     let audioEncoding: google.cloud.speech.v1.RecognitionConfig.AudioEncoding;
 
     const inputFileExtension = getFileExtension(inputFile.url, false);
-    switch (inputFileExtension) {
+    switch (inputFileExtension.toLowerCase()) {
         case "flac":
             audioEncoding = google.cloud.speech.v1.RecognitionConfig.AudioEncoding.FLAC;
             break;
@@ -63,7 +63,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
             audioEncoding = google.cloud.speech.v1.RecognitionConfig.AudioEncoding.WEBM_OPUS;
             break;
         default:
-            throw new McmaException("Unsupported file format")
+            throw new McmaException(`Unsupported file format '${inputFileExtension}'`);
 
     }
 
@@ -137,6 +137,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
             audioChannelCount: audioChannelCount,
             languageCode: languageCode,
             enableAutomaticPunctuation: true,
+            enableWordTimeOffsets: true,
         });
 
         const audio = new RecognitionAudio({
@@ -154,29 +155,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
         logger.info("Response:");
         logger.info(response);
 
-        const transcription = response.results
-            .map(result => result.alternatives[0].transcript.trim())
-            .join(" ");
-        logger.info("Transcription: " + transcription);
-
-        const projectId = speechClient.getProjectId();
-        logger.info(projectId);
-
-        const filename = generateFilePrefix(inputFile.url) + ".txt";
-
-        const outputFile = new S3Locator({
-            url: ctx.s3.getSignedUrl("getObject", {
-                Bucket: configVariables.get("OutputBucket"),
-                Key: filename,
-                Expires: 12 * 3600
-            })
-        });
-
-        await ctx.s3.putObject({
-            Bucket: outputFile.bucket,
-            Key: outputFile.key,
-            Body: transcription,
-        }).promise();
+        const outputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".json", response, ctx.s3);
 
         logger.info("Updating job assignment with output");
         jobAssignmentHelper.jobOutput.outputFile = outputFile;
