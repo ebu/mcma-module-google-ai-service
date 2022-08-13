@@ -21,8 +21,8 @@ output "service_definition" {
         optional_input_parameters = []
         output_parameters         = [
           {
-            parameter_name = "outputFile"
-            parameter_type = "S3Locator"
+            parameter_name = "outputFiles"
+            parameter_type = "S3Locator[]"
           }
         ]
       }

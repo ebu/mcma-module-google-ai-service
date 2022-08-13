@@ -151,14 +151,22 @@ export async function transcription(providers: ProviderCollection, jobAssignment
 
         const [operation] = await speechClient.longRunningRecognize(request);
 
-        const [response] = await operation.promise();
-        logger.info("Response:");
-        logger.info(response);
+        const [output] = await operation.promise();
+        logger.info("Output:");
+        logger.info(output);
 
-        const outputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".json", response, ctx.s3);
+        const jsonOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".json", output, ctx.s3);
+
+        const webvtt = generateWebVtt(output);
+        logger.info(webvtt);
+
+        const webVttOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".vtt", webvtt, ctx.s3);
 
         logger.info("Updating job assignment with output");
-        jobAssignmentHelper.jobOutput.outputFile = outputFile;
+        jobAssignmentHelper.jobOutput.outputFiles = [
+            jsonOutputFile,
+            webVttOutputFile,
+        ];
 
         await jobAssignmentHelper.complete();
     } finally {
@@ -170,6 +178,60 @@ export async function transcription(providers: ProviderCollection, jobAssignment
             logger.error(error);
         }
     }
+}
+
+function generateWebVtt(output: any) {
+    const MAX_CHARS_PER_LINE = 80;
+
+    let webvtt = "WEBVTT";
+    let index: number = 0;
+    let start: number = -1;
+    let end: number = -1;
+    let sentence: string = "";
+
+    for (const result of output.results) {
+        for (const alternative of result.alternatives) {
+            for (const word of alternative.words) {
+                const testSentence = (sentence + " " + word.word).trim();
+
+                if (sentence.endsWith(".") || sentence.endsWith("!") || sentence.endsWith("?") || testSentence.length > MAX_CHARS_PER_LINE) {
+                    webvtt += `\n\n${index++}\n`;
+                    webvtt += `${formatTimestamp(start)} --> ${formatTimestamp(end)}\n`;
+                    webvtt += `${sentence}`;
+
+                    start = -1;
+                    end = -1;
+                    sentence = word.word;
+                } else {
+                    sentence = testSentence;
+                }
+
+                if (start < 0) {
+                    start = Number.parseInt(word.startTime.seconds ?? "0") + (word.startTime.nanos ?? 0) / 1000000000;
+                }
+                end = Number.parseInt(word.endTime.seconds ?? "0") + (word.endTime.nanos ?? 0) / 1000000000;
+            }
+        }
+    }
+
+    webvtt += `\n\n${index++}\n`;
+    webvtt += `${formatTimestamp(start)} --> ${formatTimestamp(end)}\n`;
+    webvtt += `${sentence}`;
+
+    return webvtt;
+}
+
+function formatTimestamp(timestamp: number) {
+    timestamp = Math.round(timestamp * 1000);
+    const ms = timestamp % 1000;
+    timestamp = Math.floor(timestamp / 1000);
+    const s = timestamp % 60;
+    timestamp = Math.floor(timestamp / 60);
+    const m = timestamp % 60;
+    timestamp = Math.floor(timestamp / 60);
+    const h = timestamp;
+
+    return `${h > 9 ? h : "0" + h}:${m > 9 ? m : "0" + m}:${s > 9 ? s : "0" + s}.${ms > 99 ? ms : ms > 9 ? "0" + ms : "00" + ms}`;
 }
 
 async function uploadUrlToGoogleBucket(url: string, googleFile: File): Promise<string> {

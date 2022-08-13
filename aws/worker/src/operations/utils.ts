@@ -42,7 +42,7 @@ export async function writeOutputFile(filename: string, contents: any, s3: S3): 
     await s3.putObject({
         Bucket: outputFile.bucket,
         Key: outputFile.key,
-        Body: JSON.stringify(contents)
+        Body: (typeof contents === "string") ? contents : JSON.stringify(contents)
     }).promise();
 
     return outputFile;
