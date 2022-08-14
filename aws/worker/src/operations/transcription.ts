@@ -181,7 +181,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
 }
 
 function generateWebVtt(output: any) {
-    const MAX_CHARS_PER_LINE = 80;
+    const MAX_CHARS_PER_LINE = 42;
 
     let webvtt = "WEBVTT";
     let index: number = 0;
@@ -209,7 +209,7 @@ function generateWebVtt(output: any) {
                 if (start < 0) {
                     start = Number.parseInt(word.startTime.seconds ?? "0") + (word.startTime.nanos ?? 0) / 1000000000;
                 }
-                end = Number.parseInt(word.endTime.seconds ?? "0") + (word.endTime.nanos ?? 0) / 1000000000;
+                end = Number.parseInt(word.endTime.seconds ?? "0") + (word.endTime.nanos ?? 0) / 1000000000 - 0.001;
             }
         }
     }
