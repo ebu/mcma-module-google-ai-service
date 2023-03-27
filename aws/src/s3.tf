@@ -12,11 +12,8 @@ resource "aws_s3_bucket" "config" {
   bucket        = local.bucket_name_config
   force_destroy = true
 
-
-
   lifecycle {
     ignore_changes = [
-      acl,
       logging,
       server_side_encryption_configuration,
     ]

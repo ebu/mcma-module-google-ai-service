@@ -1,44 +1,12 @@
-output "service_definition" {
-  value = {
-    name      = var.name
-    auth_type = local.service_auth_type
-    resources = [
-      {
-        resource_type = "JobAssignment"
-        http_endpoint = "${local.service_url}/job-assignments"
-      }
-    ]
-    job_type     = "AIJob"
-    job_profiles = [
-      {
-        name             = "GoogleTranscription"
-        input_parameters = [
-          {
-            parameter_name = "inputFile"
-            parameter_type = "Locator"
-          }
-        ]
-        optional_input_parameters = []
-        output_parameters         = [
-          {
-            parameter_name = "outputFiles"
-            parameter_type = "S3Locator[]"
-          }
-        ]
-      }
-    ]
-  }
-}
-
-
 output "auth_type" {
   value = local.service_auth_type
 }
 
-output "job_assignments_url" {
-  value = "${local.service_url}/job-assignments"
+output "service_url" {
+  depends_on = [ mcma_service.service ]
+  value = local.service_url
 }
-# exporting all resources from module
+
 output "aws_iam_role" {
   value = {
     api_handler = aws_iam_role.api_handler

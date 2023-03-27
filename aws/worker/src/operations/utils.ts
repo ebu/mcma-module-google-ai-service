@@ -1,7 +1,7 @@
 import { S3Locator } from "@mcma/aws-s3";
 import { S3 } from "aws-sdk";
 
-const { OutputBucket, OutputBucketPrefix } = process.env;
+const { OUTPUT_BUCKET, OUTPUT_BUCKET_PREFIX } = process.env;
 
 export function generateFilePrefix(url: string) {
     let filename = decodeURIComponent(new URL(url).pathname);
@@ -14,7 +14,7 @@ export function generateFilePrefix(url: string) {
         filename = filename.substring(0, pos);
     }
 
-    return `${OutputBucketPrefix}${new Date().toISOString().substring(0, 19).replace(/[:]/g, "-")}/${filename}`;
+    return `${OUTPUT_BUCKET_PREFIX}${new Date().toISOString().substring(0, 19).replace(/[:]/g, "-")}/${filename}`;
 }
 
 export function getFileExtension(url: string, withDot: boolean = true) {
@@ -33,7 +33,7 @@ export function getFileExtension(url: string, withDot: boolean = true) {
 export async function writeOutputFile(filename: string, contents: any, s3: S3): Promise<S3Locator> {
     const outputFile = new S3Locator({
         url: s3.getSignedUrl("getObject", {
-            Bucket: OutputBucket,
+            Bucket: OUTPUT_BUCKET,
             Key: filename,
             Expires: 12 * 3600
         })

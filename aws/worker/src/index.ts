@@ -4,21 +4,17 @@ import * as AWSXRay from "aws-xray-sdk-core";
 import { AuthProvider, ResourceManagerProvider } from "@mcma/client";
 import { ProcessJobAssignmentOperation, ProviderCollection, Worker, WorkerRequest, WorkerRequestProperties } from "@mcma/worker";
 import { DynamoDbTableProvider } from "@mcma/aws-dynamodb";
-import { AwsCloudWatchLoggerProvider } from "@mcma/aws-logger";
+import { AwsCloudWatchLoggerProvider, getLogGroupName } from "@mcma/aws-logger";
 import { awsV4Auth } from "@mcma/aws-client";
 import { AIJob } from "@mcma/core";
-import {
-    transcription
-} from "./operations";
-import { S3} from "aws-sdk";
-
-const { LogGroupName } = process.env;
+import { transcription } from "./operations";
+import { S3 } from "aws-sdk";
 
 const AWS = AWSXRay.captureAWS(require("aws-sdk"));
 
 const authProvider = new AuthProvider().add(awsV4Auth(AWS));
 const dbTableProvider = new DynamoDbTableProvider();
-const loggerProvider = new AwsCloudWatchLoggerProvider("google-ai-service-worker", LogGroupName);
+const loggerProvider = new AwsCloudWatchLoggerProvider("google-ai-service-worker", getLogGroupName());
 const resourceManagerProvider = new ResourceManagerProvider(authProvider);
 
 const providerCollection = new ProviderCollection({

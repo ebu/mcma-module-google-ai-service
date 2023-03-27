@@ -77,8 +77,8 @@ export async function transcription(providers: ProviderCollection, jobAssignment
     logger.info("Client Email: " + googleClientEmail);
     logger.info("Private Key Id: " + googleCredentials.private_key_id);
 
-    const googleBucketName = configVariables.get("GoogleBucketName");
-    const googleBucketLocation = configVariables.get("GoogleBucketLocation");
+    const googleBucketName = configVariables.get("GOOGLE_BUCKET_NAME");
+    const googleBucketLocation = configVariables.get("GOOGLE_BUCKET_LOCATION");
     logger.info(`Using google bucket with name '${googleBucketName}' in locatoin '${googleBucketLocation}`);
 
     const storage = new Storage({
@@ -247,8 +247,8 @@ async function uploadUrlToGoogleBucket(url: string, googleFile: File): Promise<s
 
 async function getGoogleServiceCredentials(s3: S3): Promise<any> {
     try {
-        const googleServiceCredentialsS3Bucket = configVariables.get("ConfigFileBucket");
-        const googleServiceCredentialsS3Key = configVariables.get("ConfigFileKey");
+        const googleServiceCredentialsS3Bucket = configVariables.get("CONFIG_FILE_BUCKET");
+        const googleServiceCredentialsS3Key = configVariables.get("CONFIG_FILE_KEY");
 
         const data = await s3.getObject({
             Bucket: googleServiceCredentialsS3Bucket,
