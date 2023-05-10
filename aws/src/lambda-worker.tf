@@ -150,7 +150,7 @@ resource "aws_lambda_function" "worker" {
   handler          = "index.handler"
   filename         = local.worker_zip_file
   source_code_hash = filebase64sha256(local.worker_zip_file)
-  runtime          = "nodejs16.x"
+  runtime          = "nodejs18.x"
   timeout          = "900"
   memory_size      = "2048"
 
@@ -160,17 +160,17 @@ resource "aws_lambda_function" "worker" {
 
   environment {
     variables = {
-      MCMA_LOG_GROUP_NAME         = var.log_group.name
-      MCMA_TABLE_NAME            = aws_dynamodb_table.service_table.name
-      MCMA_PUBLIC_URL            = local.service_url
-      MCMA_SERVICE_REGISTRY_URL          = var.service_registry.service_url
-      MCMA_SERVICE_REGISTRY_AUTH_TYPE     = var.service_registry.auth_type
-      CONFIG_FILE_BUCKET     = aws_s3_object.config_file.bucket
-      CONFIG_FILE_KEY        = aws_s3_object.config_file.id
-      OUTPUT_BUCKET         = var.output_bucket != null ? var.output_bucket.id : aws_s3_bucket.output[0].id
-      OUTPUT_BUCKET_PREFIX   = var.output_bucket_prefix
-      GOOGLE_BUCKET_NAME     = var.google_bucket_name
-      GOOGLE_BUCKET_LOCATION = var.google_bucket_location
+      MCMA_LOG_GROUP_NAME             = var.log_group.name
+      MCMA_TABLE_NAME                 = aws_dynamodb_table.service_table.name
+      MCMA_PUBLIC_URL                 = local.service_url
+      MCMA_SERVICE_REGISTRY_URL       = var.service_registry.service_url
+      MCMA_SERVICE_REGISTRY_AUTH_TYPE = var.service_registry.auth_type
+      CONFIG_FILE_BUCKET              = aws_s3_object.config_file.bucket
+      CONFIG_FILE_KEY                 = aws_s3_object.config_file.id
+      OUTPUT_BUCKET                   = var.output_bucket != null ? var.output_bucket.id : aws_s3_bucket.output[0].id
+      OUTPUT_BUCKET_PREFIX            = var.output_bucket_prefix
+      GOOGLE_BUCKET_NAME              = var.google_bucket_name
+      GOOGLE_BUCKET_LOCATION          = var.google_bucket_location
     }
   }
 

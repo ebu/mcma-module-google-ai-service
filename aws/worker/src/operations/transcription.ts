@@ -1,6 +1,5 @@
 import { ProcessJobAssignmentHelper, ProviderCollection } from "@mcma/worker";
 import { AIJob, ConfigVariables, McmaException, ProblemDetail, Utils } from "@mcma/core";
-import { S3 } from "aws-sdk";
 import { Storage, File } from "@google-cloud/storage";
 import { v4 as uuidv4 } from "uuid";
 import { default as axios } from "axios";
@@ -13,6 +12,7 @@ import { S3Locator } from "@mcma/aws-s3";
 import { google } from "@google-cloud/speech/build/protos/protos";
 import RecognitionConfig = google.cloud.speech.v1.RecognitionConfig;
 import RecognitionAudio = google.cloud.speech.v1.RecognitionAudio;
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const configVariables = ConfigVariables.getInstance();
 
@@ -67,7 +67,7 @@ export async function transcription(providers: ProviderCollection, jobAssignment
 
     }
 
-    const googleCredentials = await getGoogleServiceCredentials(ctx.s3);
+    const googleCredentials = await getGoogleServiceCredentials(ctx.s3Client);
 
     const googleProjectId = googleCredentials.project_id;
     const googleClientEmail = googleCredentials.client_email;
@@ -155,12 +155,12 @@ export async function transcription(providers: ProviderCollection, jobAssignment
         logger.info("Output:");
         logger.info(output);
 
-        const jsonOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".json", output, ctx.s3);
+        const jsonOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".json", output, ctx.s3Client);
 
         const webvtt = generateWebVtt(output);
         logger.info(webvtt);
 
-        const webVttOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".vtt", webvtt, ctx.s3);
+        const webVttOutputFile = await writeOutputFile(generateFilePrefix(inputFile.url) + ".vtt", webvtt, ctx.s3Client);
 
         logger.info("Updating job assignment with output");
         jobAssignmentHelper.jobOutput.outputFiles = [
@@ -245,17 +245,17 @@ async function uploadUrlToGoogleBucket(url: string, googleFile: File): Promise<s
     });
 }
 
-async function getGoogleServiceCredentials(s3: S3): Promise<any> {
+async function getGoogleServiceCredentials(s3Client: S3Client): Promise<any> {
     try {
         const googleServiceCredentialsS3Bucket = configVariables.get("CONFIG_FILE_BUCKET");
         const googleServiceCredentialsS3Key = configVariables.get("CONFIG_FILE_KEY");
 
-        const data = await s3.getObject({
+        const data = await s3Client.send(new GetObjectCommand({
             Bucket: googleServiceCredentialsS3Bucket,
             Key: googleServiceCredentialsS3Key,
-        }).promise();
+        }));
 
-        return JSON.parse(data.Body.toString());
+        return JSON.parse(await data.Body.transformToString());
     } catch (error) {
         throw new McmaException("Failed to obtain Google Service Credentials", error);
     }

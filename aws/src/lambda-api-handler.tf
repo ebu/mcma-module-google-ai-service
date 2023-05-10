@@ -129,7 +129,7 @@ resource "aws_lambda_function" "api_handler" {
   handler          = "index.handler"
   filename         = local.api_handler_zip_file
   source_code_hash = filebase64sha256(local.api_handler_zip_file)
-  runtime          = "nodejs16.x"
+  runtime          = "nodejs18.x"
   timeout          = "30"
   memory_size      = "2048"
 
@@ -139,8 +139,8 @@ resource "aws_lambda_function" "api_handler" {
 
   environment {
     variables = {
-      MCMA_TABLE_NAME        = aws_dynamodb_table.service_table.name
-      MCMA_PUBLIC_URL        = local.service_url
+      MCMA_TABLE_NAME         = aws_dynamodb_table.service_table.name
+      MCMA_PUBLIC_URL         = local.service_url
       MCMA_WORKER_FUNCTION_ID = aws_lambda_function.worker.function_name
     }
   }

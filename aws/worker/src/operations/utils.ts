@@ -1,5 +1,6 @@
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3Locator } from "@mcma/aws-s3";
-import { S3 } from "aws-sdk";
 
 const { OUTPUT_BUCKET, OUTPUT_BUCKET_PREFIX } = process.env;
 
@@ -30,20 +31,17 @@ export function getFileExtension(url: string, withDot: boolean = true) {
     return "";
 }
 
-export async function writeOutputFile(filename: string, contents: any, s3: S3): Promise<S3Locator> {
-    const outputFile = new S3Locator({
-        url: s3.getSignedUrl("getObject", {
-            Bucket: OUTPUT_BUCKET,
-            Key: filename,
-            Expires: 12 * 3600
-        })
+export async function writeOutputFile(objectKey: string, contents: any, s3Client: S3Client): Promise<S3Locator> {
+    await s3Client.send(new PutObjectCommand({
+        Bucket: OUTPUT_BUCKET,
+        Key: objectKey,
+        Body: (typeof contents === "string") ? contents : JSON.stringify(contents),
+    }));
+
+    const command = new GetObjectCommand({
+        Bucket: OUTPUT_BUCKET,
+        Key: objectKey,
     });
 
-    await s3.putObject({
-        Bucket: outputFile.bucket,
-        Key: outputFile.key,
-        Body: (typeof contents === "string") ? contents : JSON.stringify(contents)
-    }).promise();
-
-    return outputFile;
+    return new S3Locator({ url: await getSignedUrl(s3Client, command, { expiresIn: 12 * 3600 }) });
 }

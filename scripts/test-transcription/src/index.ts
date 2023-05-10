@@ -3,17 +3,16 @@ import * as path from "path";
 import * as mime from "mime-types";
 
 import { v4 as uuidv4 } from "uuid";
-import * as AWS from "aws-sdk";
+import { S3Client, HeadObjectCommand, PutObjectCommand, PutObjectCommandInput, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { fromIni } from "@aws-sdk/credential-providers";
 
 import { AuthProvider, ResourceManager, ResourceManagerConfig } from "@mcma/client";
 import { AIJob, Job, JobParameterBag, JobProfile, JobStatus, McmaException, McmaTracker, Utils } from "@mcma/core";
 import { S3Locator } from "@mcma/aws-s3";
 import { awsV4Auth } from "@mcma/aws-client";
 
-const { AwsProfile, AwsRegion } = process.env;
-
-AWS.config.credentials = new AWS.SharedIniFileCredentials({ profile: AwsProfile });
-AWS.config.region = AwsRegion;
+const credentials = fromIni();
 
 const JOB_PROFILE = "GoogleTranscription";
 
@@ -21,7 +20,7 @@ const TERRAFORM_OUTPUT = "../../deployment/terraform.output.json";
 
 const MEDIA_FILE = "C:/Media/Demo/2015_GF_ORF_00_18_09_conv.flac";
 
-const s3 = new AWS.S3();
+const s3Client = new S3Client({ credentials });
 
 export function log(entry?: any) {
     if (typeof entry === "object") {
@@ -37,7 +36,7 @@ async function uploadFileToBucket(bucket: string, filename: string) {
         console.log("File Error", err);
     });
 
-    const uploadParams: AWS.S3.PutObjectRequest = {
+    const params: PutObjectCommandInput = {
         Bucket: bucket,
         Key: path.basename(filename),
         Body: fileStream,
@@ -48,7 +47,7 @@ async function uploadFileToBucket(bucket: string, filename: string) {
 
     try {
         console.log("checking if file is already present");
-        await s3.headObject({ Bucket: uploadParams.Bucket, Key: uploadParams.Key }).promise();
+        await s3Client.send(new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key }));
         console.log("Already present. Not uploading again");
     } catch (error) {
         isPresent = false;
@@ -56,16 +55,17 @@ async function uploadFileToBucket(bucket: string, filename: string) {
 
     if (!isPresent) {
         console.log("Not present. Uploading");
-        await s3.upload(uploadParams).promise();
+        await s3Client.send(new PutObjectCommand(params));
     }
 
-    return new S3Locator({
-        url: s3.getSignedUrl("getObject", {
-            Bucket: uploadParams.Bucket,
-            Key: uploadParams.Key,
-            Expires: 3600
-        })
+    const command = new GetObjectCommand({
+        Bucket: params.Bucket,
+        Key: params.Key,
     });
+
+    const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+    return new S3Locator({ url });
 }
 
 async function waitForJobCompletion(job: Job, resourceManager: ResourceManager): Promise<Job> {
@@ -131,7 +131,7 @@ async function main() {
         serviceRegistryAuthType,
     };
 
-    const resourceManager = new ResourceManager(resourceManagerConfig, new AuthProvider().add(awsV4Auth(AWS)));
+    const resourceManager = new ResourceManager(resourceManagerConfig, new AuthProvider().add(awsV4Auth({ credentials })));
 
     console.log(`Uploading media file ${MEDIA_FILE}`);
     const mediaFileLocator = await uploadFileToBucket(uploadBucket, MEDIA_FILE);

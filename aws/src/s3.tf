@@ -20,12 +20,6 @@ resource "aws_s3_bucket" "config" {
   }
 }
 
-resource "aws_s3_bucket_acl" "config" {
-  count  = length(aws_s3_bucket.config)
-  bucket = aws_s3_bucket.config[0].id
-  acl    = "private"
-}
-
 resource "aws_s3_bucket_policy" "config" {
   count  = length(aws_s3_bucket.config)
   bucket = aws_s3_bucket.config[0].id
@@ -143,13 +137,6 @@ resource "aws_s3_bucket_policy" "output" {
       }
     ]
   })
-}
-
-resource "aws_s3_bucket_acl" "output" {
-  count = var.output_bucket == null ? 1 : 0
-
-  bucket = aws_s3_bucket.output[0].id
-  acl    = "private"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "output" {
